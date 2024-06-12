@@ -52,6 +52,12 @@
       <height>16</height>
      </rect>
     </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10</number>
+    </property>
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
     </property>
@@ -59,7 +65,7 @@
      <enum>QSlider::TicksBelow</enum>
     </property>
     <property name="tickInterval">
-     <number>5</number>
+     <number>1</number>
     </property>
    </widget>
    <widget class="QLineEdit" name="lblSeriCekim">
@@ -94,6 +100,12 @@
       <height>16</height>
      </rect>
     </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10</number>
+    </property>
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
     </property>
@@ -101,7 +113,7 @@
      <enum>QSlider::TicksBelow</enum>
     </property>
     <property name="tickInterval">
-     <number>5</number>
+     <number>1</number>
     </property>
    </widget>
    <widget class="QCheckBox" name="cbSeriCekim">
@@ -190,6 +202,19 @@
     </property>
     <property name="text">
      <string>open directory</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblPath">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>80</y>
+      <width>51</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>path:</string>
     </property>
    </widget>
   </widget>

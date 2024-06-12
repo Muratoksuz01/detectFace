@@ -6,6 +6,15 @@ import cv2
 from kisiekleme import KisiEklemeForm
 from PyQt5.QtWidgets import QMessageBox
 
+import os
+import sys
+from PyQt5 import QtCore, QtGui, QtWidgets
+import cv2
+
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(os.path.dirname(QtCore.__file__), "plugins")
+
+
+
 
 class ExampleApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -13,14 +22,15 @@ class ExampleApp(QtWidgets.QMainWindow):
         uic.loadUi('genelTasarim.ui', self)
         
         # Timer ve kamera bağlantısı
-        # self.cap = cv2.VideoCapture(0)
-        # self.timer = QTimer(self)
-        # self.timer.timeout.connect(self.update_frame)
-        # self.timer.start(20)
+        self.cap = cv2.VideoCapture(0)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(20)
 
         # Yeni form açma butonuna bağla
         self.btnKisiEkle.clicked.connect(self.open_kisi_ekleme)
         self.btnKisiSil.clicked.connect(self.open_kisi_sil)
+        self.open_kisi_ekleme()
     def update_frame(self):
         ret, frame = self.cap.read()
         if ret:
