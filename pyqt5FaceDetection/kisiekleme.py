@@ -3,31 +3,20 @@ from PyQt5.QtWidgets import QFileDialog,QMessageBox
 from PyQt5.QtCore import QTimer,pyqtSignal
 from PyQt5.QtGui import QImage,QPixmap
 from uuid import uuid1
-import cv2,os
+import cv2,os,random,shutil
+from util import getAndTrain
 
 """
  sonraki yapılacaklar :
- rresim kayıt edilirken biraz kanal degişikligi olmus bunu duzelt 
- kullacı path a class ları belirten yolo icin kullacagın sey işte o yazılcak 
- yaml dosyası yazılacak minumun train ve val olsa yeter
- ornek:
-    train: /path/to/your/train/images
-    val: /path/to/your/validation/images
 
-    names: 
-        0: paper
-        1: glass
-        2: metal
-        3: plastic
 """
 
 
 class KisiEklemeForm(QtWidgets.QMainWindow):
     form_closed = pyqtSignal()  # Yeni bir sinyal tanımlayın
-    def __init__(self,parent=None):
+    def __init__(self,parent=None,folder=None):
         super(KisiEklemeForm, self).__init__()
-        uic.loadUi('kisiekleme.ui', self)  # UI dosyasını yükleyin
-        self.btnOpenDir.clicked.connect(self.btnOpenDir_Click)
+        uic.loadUi('/home/murat/Documents/python/detectFace/pyqt5FaceDetection/kisiekleme.ui', self)  # UI dosyasını yükleyin
         self.btnCek.clicked.connect(self.btnCek_Click)
         self.btntrain.clicked.connect(self.btnTrain_Click)
         self.sliderGenislik_2.valueChanged.connect(self.on_sliderGenislik_value_changed)
@@ -38,12 +27,11 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
         self.genislik=int(self.VideoLabel.width()/2)
         self.frame_witht=200
         self.frame_height=300
-        self.frame=None
-        self.X1=None
-        self.X2=None
-        self.Y1=None
-        self.Y2=None
-        self.folder=None
+        self.frame,self.X1,self.X2,self.Y1,self.Y2=None,None,None,None,None
+        
+        self.folder=folder
+        self.label="murat"
+        self.main=f"{self.folder}/{self.label}"
         
         # # Timer oluştur ve update_frame fonksiyonunu çağır
         self.cap = cv2.VideoCapture(0)
@@ -51,14 +39,13 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(20)
     def btnCek_Click(self):
-        label = self.lblSeriCekim_2.text()
-        if label or self.folder:
+        # label = self.lblSeriCekim_2.text()
+        if self.label and self.folder:
             self.isFolderExists()
             name = uuid1()
             print(name)
             # Resmi kaydet
-            cv2.imwrite(f"{self.folder}/{self.lblSeriCekim_2.text()}/images/11{name}.png", cv2.cvtColor(self.frame, cv2.COLOR_RGB2BGR))
-            cv2.imwrite(f"{self.folder}/{self.lblSeriCekim_2.text()}/images/{name}.png", cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB))
+            cv2.imwrite(f"{self.folder}/{self.lblSeriCekim_2.text()}/images/{name}.png", self.frame)
             
             # Normalize değerleri hesapla
             img_height, img_width, _ = self.frame.shape
@@ -66,15 +53,66 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
             y_center = (self.Y1 + self.Y2) / 2 / img_height
             width = (self.X2 - self.X1) / img_width
             height = (self.Y2 - self.Y1) / img_height
-            
+            self.main=f"{self.folder}/{self.lblSeriCekim_2.text()}"
             # Etiket dosyasına yaz
             with open(f"{self.folder}/{self.lblSeriCekim_2.text()}/labels/{name}.txt", "w") as f:
                 f.write(f"0 {x_center} {y_center} {width} {height}")
         else:
             QMessageBox.critical(self, 'critical', 'you have to give a label and folder for your photos.')
+    def ShuffleAndMove(self):
+        print(self.main)
+        os.makedirs(self.main+"/train/images", exist_ok=True)
+        os.makedirs(self.main+"/train/labels", exist_ok=True)
+        os.makedirs(self.main+"/valid/images", exist_ok=True)
+        os.makedirs(self.main+"/valid/labels", exist_ok=True)
+        
+        preImages = os.listdir(self.main+"/images/")
+        if len(preImages)==0:return
+        preImages=[i.split(".")[0] for  i in preImages]
+        trainlen = int(len(preImages) * 0.7)
+        random.shuffle(preImages)
+        train = preImages[:trainlen]
+        valid = preImages[trainlen:]
+        
+        try:
+            for i in train:
+                shutil.move(os.path.join(self.main, "labels", f"{i}.txt"), os.path.join(self.main, "train", "labels", f"{i}.txt"))
+                shutil.move(os.path.join(self.main, "images", f"{i}.png"), os.path.join(self.main, "train", "images", f"{i}.png"))
+        except FileNotFoundError as e:
+            print(f"Hata: {e}")
+            return
+        try:
+            for i in valid:
+                shutil.move(os.path.join(self.main, "labels", f"{i}.txt"), os.path.join(self.main, "valid", "labels", f"{i}.txt"))
+                shutil.move(os.path.join(self.main, "images", f"{i}.png"), os.path.join(self.main, "valid", "images", f"{i}.png"))
+        except FileNotFoundError as e:
+            print(f"Hata: {e}")
+            return
+        
+        
+        os.removedirs(self.folder+"/images")
+        os.removedirs(self.folder+"/labels")
+        
+        with open(f"{self.main}/data.yaml","w") as f:
+            f.write(
+f"""
+train:{self.main}/train/images
+valid:{self.main}/valid/images
+nc: 1
+names: ['{self.label}']
+        """
+            )
 
+        
     def btnTrain_Click(self):
-        print("ogren basıldı")
+        self.ShuffleAndMove()
+        getAndTrain(self.folder,self.main,epo=1)
+        QMessageBox.about(self,"about","model egitildi")
+        
+        
+        
+        
+        
     def update_frame(self):
         self.X1, self.Y1 = (int(self.genislik - self.frame_witht / 2), int(self.yukseklik - self.frame_height / 2))
         self.X2, self.Y2 = (int(self.genislik + self.frame_witht / 2), int(self.yukseklik + self.frame_height / 2))
@@ -101,14 +139,7 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
         self.form_closed.emit()  # Form kapandığında sinyali gönderin
         event.accept()
 
-    def btnOpenDir_Click(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        self.folder = QFileDialog.getExistingDirectory(self, "Select Directory", "/home/murar/Documents/python/pyqt5FaceDetection", options=options)
-        if self.folder:
-            self.lblPath.setText(self.folder)
-            print(self.folder)
-    
+
     def on_sliderGenislik_value_changed(self, value):
         self.frame_witht=(self.genislik*2)*(value/10)
     def on_sliderYukseklik_value_changed(self, value):        
@@ -120,11 +151,13 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
         imagespath=os.path.join(mainpath,"images")
         labelspath=os.path.join(mainpath,"labels")
         if os.path.exists(mainpath):
-            if os.path.exists(imagespath):pass
-            else:os.mkdir(imagespath)
             
-            if os.path.exists(labelspath):pass
-            else:os.mkdir(labelspath)
+            QMessageBox.warning(self,"uyarı","bu label zaten var lutfen bir defa daha deneyin")
+            # if os.path.exists(imagespath):pass
+            # else:os.mkdir(imagespath)
+            
+            # if os.path.exists(labelspath):pass
+            # else:os.mkdir(labelspath)
             
             
         else:
