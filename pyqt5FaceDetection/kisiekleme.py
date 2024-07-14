@@ -28,9 +28,9 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
         self.frame_witht=200
         self.frame_height=300
         self.frame,self.X1,self.X2,self.Y1,self.Y2=None,None,None,None,None
-        
+        self.isfirstImage=True
         self.folder=folder
-        self.label="murat"
+        self.label=self.lblSeriCekim_2.text() if self.lblSeriCekim_2.text() else "bb" #                                           
         self.main=f"{self.folder}/{self.label}"
         
         # # Timer oluştur ve update_frame fonksiyonunu çağır
@@ -39,13 +39,16 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(20)
     def btnCek_Click(self):
-        # label = self.lblSeriCekim_2.text()
+        # label = self.label
+        print("folder :",self.folder)
+        print("label :",self.label)
+        
         if self.label and self.folder:
-            self.isFolderExists()
+            if self.isfirstImage: self.isFolderExists() 
             name = uuid1()
             print(name)
             # Resmi kaydet
-            cv2.imwrite(f"{self.folder}/{self.lblSeriCekim_2.text()}/images/{name}.png", self.frame)
+            cv2.imwrite(f"{self.folder}/{self.label}/images/{name}.png", self.frame)
             
             # Normalize değerleri hesapla
             img_height, img_width, _ = self.frame.shape
@@ -53,60 +56,19 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
             y_center = (self.Y1 + self.Y2) / 2 / img_height
             width = (self.X2 - self.X1) / img_width
             height = (self.Y2 - self.Y1) / img_height
-            self.main=f"{self.folder}/{self.lblSeriCekim_2.text()}"
+            self.main=f"{self.folder}/{self.label}"
             # Etiket dosyasına yaz
-            with open(f"{self.folder}/{self.lblSeriCekim_2.text()}/labels/{name}.txt", "w") as f:
+            with open(f"{self.folder}/{self.label}/labels/{name}.txt", "w") as f:
                 f.write(f"0 {x_center} {y_center} {width} {height}")
+            self.isfirstImage=False
         else:
-            QMessageBox.critical(self, 'critical', 'you have to give a label and folder for your photos.')
-    def ShuffleAndMove(self):
-        print(self.main)
-        os.makedirs(self.main+"/train/images", exist_ok=True)
-        os.makedirs(self.main+"/train/labels", exist_ok=True)
-        os.makedirs(self.main+"/valid/images", exist_ok=True)
-        os.makedirs(self.main+"/valid/labels", exist_ok=True)
-        
-        preImages = os.listdir(self.main+"/images/")
-        if len(preImages)==0:return
-        preImages=[i.split(".")[0] for  i in preImages]
-        trainlen = int(len(preImages) * 0.7)
-        random.shuffle(preImages)
-        train = preImages[:trainlen]
-        valid = preImages[trainlen:]
-        
-        try:
-            for i in train:
-                shutil.move(os.path.join(self.main, "labels", f"{i}.txt"), os.path.join(self.main, "train", "labels", f"{i}.txt"))
-                shutil.move(os.path.join(self.main, "images", f"{i}.png"), os.path.join(self.main, "train", "images", f"{i}.png"))
-        except FileNotFoundError as e:
-            print(f"Hata: {e}")
-            return
-        try:
-            for i in valid:
-                shutil.move(os.path.join(self.main, "labels", f"{i}.txt"), os.path.join(self.main, "valid", "labels", f"{i}.txt"))
-                shutil.move(os.path.join(self.main, "images", f"{i}.png"), os.path.join(self.main, "valid", "images", f"{i}.png"))
-        except FileNotFoundError as e:
-            print(f"Hata: {e}")
-            return
-        
-        
-        os.removedirs(self.folder+"/images")
-        os.removedirs(self.folder+"/labels")
-        
-        with open(f"{self.main}/data.yaml","w") as f:
-            f.write(
-f"""
-train:{self.main}/train/images
-valid:{self.main}/valid/images
-nc: 1
-names: ['{self.label}']
-        """
-            )
+            QMessageBox.critical(self, 'critical', f'you have to give a label and folder for your photos {self.label}   {self.folder}')
+    
 
         
     def btnTrain_Click(self):
         self.ShuffleAndMove()
-        getAndTrain(self.folder,self.main,epo=1)
+        getAndTrain(self.folder,self.main,epo=20)
         QMessageBox.about(self,"about","model egitildi")
         
         
@@ -147,7 +109,7 @@ names: ['{self.label}']
        
     
     def isFolderExists(self):
-        mainpath=os.path.join(self.folder,self.lblSeriCekim_2.text())
+        mainpath=os.path.join(self.folder,self.label)
         imagespath=os.path.join(mainpath,"images")
         labelspath=os.path.join(mainpath,"labels")
         if os.path.exists(mainpath):
@@ -164,6 +126,44 @@ names: ['{self.label}']
             os.mkdir(mainpath)
             os.mkdir(imagespath)
             os.mkdir(labelspath)
-            
+    
+    
+    
+    def ShuffleAndMove(self):
+        print(self.main)
+        os.makedirs(self.main+"/train/images", exist_ok=True)
+        os.makedirs(self.main+"/train/labels", exist_ok=True)
+        os.makedirs(self.main+"/valid/images", exist_ok=True)
+        os.makedirs(self.main+"/valid/labels", exist_ok=True)
+        
+        preImages = os.listdir(self.main+"/images/")
+        if len(preImages)==0:return
+        preImages=[i.split(".")[0] for  i in preImages]
+        trainlen = int(len(preImages) * 0.7)
+        random.shuffle(preImages)
+        train = preImages[:trainlen]
+        valid = preImages[trainlen:]
+        
+        try:
+            for i in train:
+                shutil.move(os.path.join(self.main, "labels", f"{i}.txt"), os.path.join(self.main, "train", "labels", f"{i}.txt"))
+                shutil.move(os.path.join(self.main, "images", f"{i}.png"), os.path.join(self.main, "train", "images", f"{i}.png"))
+        except FileNotFoundError as e:
+            print(f"Hata: {e}")
+            return
+        try:
+            for i in valid:
+                shutil.move(os.path.join(self.main, "labels", f"{i}.txt"), os.path.join(self.main, "valid", "labels", f"{i}.txt"))
+                shutil.move(os.path.join(self.main, "images", f"{i}.png"), os.path.join(self.main, "valid", "images", f"{i}.png"))
+        except FileNotFoundError as e:
+            print(f"Hata: {e}")
+            return
+        
+        
+        os.removedirs(self.main+"/images")
+        os.removedirs(self.main+"/labels")
+        
+        with open(f"{self.main}/data.yaml","w") as f:
+            f.write(f"train: {self.main}/train/images\nval: {self.main}/valid/images\nnc: 1\nnames: ['{self.label}']")  
             
        

@@ -121,6 +121,19 @@
      <enum>QAbstractItemView::MultiSelection</enum>
     </property>
    </widget>
+   <widget class="QPushButton" name="btn_durdur">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>510</y>
+      <width>121</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>durdur model</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

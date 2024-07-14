@@ -6,9 +6,9 @@ import cv2
 from PyQt5.QtWidgets import QFileDialog,QMessageBox,QListWidgetItem
 
 from kisiekleme import KisiEklemeForm
-from util import lockMouseandkey
-import os
-from PyQt5 import QtCore, QtGui, QtWidgets
+from util import *
+import os,random
+from PyQt5 import QtCore, QtWidgets
 
 
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(os.path.dirname(QtCore.__file__), "plugins")
@@ -21,6 +21,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         super(ExampleApp, self).__init__()
         uic.loadUi('/home/murat/Documents/python/detectFace/pyqt5FaceDetection/genelTasarim.ui', self)
         self.btnOpenDir.clicked.connect(self.btnOpenDir_Click)
+        self.btn_durdur.clicked.connect(self.btn_durdur_Click)
         self.btnKisiEkle.clicked.connect(self.open_kisi_ekleme)
         self.btnKisiSil.clicked.connect(self.open_kisi_sil)
         self.btnKaydet.clicked.connect(self.show_selected)
@@ -29,7 +30,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(20)
-
+        self.allmodels=None
         # Yeni form açma butonuna bağla
         self.folder="/home/murat/General"
         self.searchModel()
@@ -42,15 +43,45 @@ class ExampleApp(QtWidgets.QMainWindow):
     def show_selected(self):
         selected_items = self.listwidget.selectedItems()
         selected_texts = [item.text() for item in selected_items]
-        print("Selected items:", selected_texts)
-        lockMouseandkey()
+        self.allmodels=getModel(self.folder,selected_texts)
+    def btn_durdur_Click(self):
+        self.allmodels.clear()
+        print("modeller durduruldu !!!!!")
         
     def update_frame(self):
+        def predictModel(img):
+            img=cv2.resize(img,(640,640))
+            for model in self.allmodels:
+                
+                results=model.predict(img,conf=0.5)
+                if len(results)==0:
+                    continue
+                for r in results:
+                    boxes=r.boxes
+                    cls=boxes.cls
+                    print("classname:",cls)
+                    print("len:",len(cls))
+                    for box,conf in zip(boxes.xyxy,boxes.conf): #                       sonradan burayı duzeltitrsin 
+                        x1,y1,x2,y2=box
+                        x1,y1,x2,y2=int(x1),int(y1),int(x2),int(y2)
+                        cv2.rectangle(img,(x1,y1),(x2,y2),(random.randint(0,255),random.randint(0,255),random.randint(0,255)),1)
+
+                    
+            return img           
+            
+            
+            
+            
+            
+            
+            
         ret, frame = self.cap.read()
         if ret:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width, channel = frame.shape
             step = channel * width
+            if self.allmodels:
+                frame=predictModel(frame)
             qimg = QImage(frame.data, width, height, step, QImage.Format_RGB888)
             self.videoLabel.setPixmap(QPixmap.fromImage(qimg))
 
