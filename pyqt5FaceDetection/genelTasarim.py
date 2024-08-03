@@ -19,7 +19,7 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(os.path.dirname(QtCore.
 class ExampleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super(ExampleApp, self).__init__()
-        uic.loadUi('/home/murat/Documents/python/detectFace/pyqt5FaceDetection/genelTasarim.ui', self)
+        uic.loadUi('/pyqt5FaceDetection/genelTasarim.ui', self)
         self.btnOpenDir.clicked.connect(self.btnOpenDir_Click)
         self.btn_durdur.clicked.connect(self.btn_durdur_Click)
         self.btnKisiEkle.clicked.connect(self.open_kisi_ekleme)
