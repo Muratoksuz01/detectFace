@@ -16,7 +16,7 @@ class KisiEklemeForm(QtWidgets.QMainWindow):
     form_closed = pyqtSignal()  # Yeni bir sinyal tanımlayın
     def __init__(self,parent=None,folder=None):
         super(KisiEklemeForm, self).__init__()
-        uic.loadUi('/home/murat/Documents/python/detectFace/pyqt5FaceDetection/kisiekleme.ui', self)  # UI dosyasını yükleyin
+        uic.loadUi('/pyqt5FaceDetection/kisiekleme.ui', self)  # UI dosyasını yükleyin
         self.btnCek.clicked.connect(self.btnCek_Click)
         self.btntrain.clicked.connect(self.btnTrain_Click)
         self.sliderGenislik_2.valueChanged.connect(self.on_sliderGenislik_value_changed)
