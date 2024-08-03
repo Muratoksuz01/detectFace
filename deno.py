@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 import random
 
-model = YOLO("/home/murat/General/murat/runs/weights/best.pt")
+model = YOLO("runs/weights/best.pt")
 
 cap = cv2.VideoCapture(0)
 while True:
